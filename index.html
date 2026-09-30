@@ -87,9 +87,11 @@ button:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
 .rank .pts{font-family:var(--mono);font-weight:700;font-size:44px;line-height:1.1}
 .rank .pts small{font-family:var(--sans);font-size:14px;font-weight:600;color:var(--muted)}
 .stats{grid-template-columns:1fr 1fr 1fr}
+.winpic{display:block;width:62%;max-width:230px;margin:4px auto 6px;animation:rise .5s ease-out both}
+@keyframes rise{from{opacity:0;transform:translateY(18px) scale(.85)}to{opacity:1;transform:none}}
 #fx{position:fixed;inset:0;pointer-events:none;z-index:5}
 [hidden]{display:none!important}
-@media (prefers-reduced-motion:reduce){.t,.t.pop,.t.nope{animation:none;transition:none}}
+@media (prefers-reduced-motion:reduce){.t,.t.pop,.t.nope,.winpic{animation:none;transition:none}}
 </style>
 </head>
 <body>
@@ -98,7 +100,7 @@ button:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
 
   <section id="intro">
     <h1>You are the decompressor</h1>
-    <p class="lede">A secret message was compressed with LZ77. Follow the tokens to rebuild it as fast as you can. The first one to say it out loud wins.</p>
+    <p class="lede">A secret message from a galaxy far, far away was compressed with LZ77. Follow the tokens to rebuild it as fast as you can. The first one to say it out loud wins.</p>
     <div class="how">
       <div class="tok">(8, 3, g)</div>
       <div class="parts">
@@ -126,11 +128,13 @@ button:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
   </main>
 
   <section id="done" hidden>
-    <h1>Decoded!</h1>
+    <!-- YOUR PICTURE: put the file name of your picture between the quotes after src= -->
+    <img class="winpic" src="image_3e7881c8.png" alt="Celebration picture" onerror="this.remove()">
+    <h1>Decoded, the message is!</h1>
     <div class="reveal" id="reveal"></div>
     <div class="rank">
       <div class="stars" id="stars" aria-hidden="true"></div>
-      <h2 id="title">Token Master</h2>
+      <h2 id="title">Jedi Knight</h2>
       <div class="pts"><span id="final">0</span> <small>points</small></div>
     </div>
     <div class="stats">
@@ -146,7 +150,7 @@ button:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
 <script>
 (function(){
   var params=new URLSearchParams(location.search);
-  var MSG=(params.get("m")||"no pain no gain").toLowerCase().slice(0,40);
+  var MSG=(params.get("m")||"do or do not there is no try").toLowerCase().slice(0,40);
 
   // LZ77 encoder: longest match, closest offset on ties, always leaves a next character
   function encode(s){
@@ -266,9 +270,9 @@ button:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
   function finish(){
     clearInterval(timer);
     var ms=Date.now()-t0,sec=Math.floor(ms/1000);
-    var bonus=Math.max(0,300-sec*5),total=score+bonus;
+    var bonus=Math.max(0,Math.round(300-sec*5*9/TOK.length)),total=score+bonus;
     var max=TOK.length*100+300;
-    var tiers=[[0.88,3,"LZ77 Legend"],[0.7,2,"Token Master"],[0.5,1,"Decoder"],[0,0,"Apprentice"]];
+    var tiers=[[0.88,3,"Jedi Master"],[0.7,2,"Jedi Knight"],[0.5,1,"Padawan"],[0,0,"Youngling"]];
     var tier=tiers.find(function(t){return total>=t[0]*max});
     $("game").hidden=true;$("done").hidden=false;
     $("reveal").textContent=MSG;
@@ -280,7 +284,7 @@ button:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
     var st="";for(var i=0;i<3;i++)st+=i<tier[1]?"★":'<span class="off">★</span>';
     $("stars").innerHTML=st;
     confetti();
-    $("note").textContent=MSG.length+" letters were sent as just "+TOK.length+" tokens.";
+    $("note").textContent=MSG.length+" letters, only "+TOK.length+" tokens. Strong with LZ77, you are.";
     window.scrollTo(0,0);
   }
 
