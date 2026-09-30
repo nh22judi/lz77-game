@@ -76,18 +76,29 @@ button:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
 .stats{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .stats div{background:var(--card);border:1.5px solid var(--line);border-radius:14px;padding:12px;text-align:center;font-size:13px;color:var(--muted)}
 .stats b{display:block;font-family:var(--mono);font-size:26px;color:var(--ink)}
-.raise{text-align:center;font-size:18px;font-weight:600;margin-top:18px}
 .note{font-size:14px;color:var(--muted);margin-top:18px;text-align:center}
+.hud{display:flex;gap:8px;align-items:center}
+.score{font-family:var(--mono);font-weight:700;font-size:20px;background:var(--amber);color:#001542;border:1.5px solid var(--line);border-radius:10px;padding:4px 10px;min-width:64px;text-align:center}
+.score.bump{animation:pop .25s ease-out}
+.rank{background:var(--card);border:1.5px solid var(--line);border-radius:18px;padding:18px;text-align:center;margin-bottom:12px}
+.stars{font-size:34px;letter-spacing:6px;color:var(--amber);-webkit-text-stroke:1px var(--line)}
+.stars .off{color:transparent}
+.rank h2{font-size:24px;font-weight:800;margin:4px 0 2px}
+.rank .pts{font-family:var(--mono);font-weight:700;font-size:44px;line-height:1.1}
+.rank .pts small{font-family:var(--sans);font-size:14px;font-weight:600;color:var(--muted)}
+.stats{grid-template-columns:1fr 1fr 1fr}
+#fx{position:fixed;inset:0;pointer-events:none;z-index:5}
 [hidden]{display:none!important}
 @media (prefers-reduced-motion:reduce){.t,.t.pop,.t.nope{animation:none;transition:none}}
 </style>
 </head>
 <body>
+<canvas id="fx" aria-hidden="true"></canvas>
 <div class="wrap">
 
   <section id="intro">
     <h1>You are the decompressor</h1>
-    <p class="lede">A secret message was compressed with LZ77. Follow the tokens to rebuild it as fast as you can.</p>
+    <p class="lede">A secret message was compressed with LZ77. Follow the tokens to rebuild it as fast as you can. The first one to say it out loud wins.</p>
     <div class="how">
       <div class="tok">(8, 3, g)</div>
       <div class="parts">
@@ -96,12 +107,13 @@ button:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
         <div><b>add g</b>new letter</div>
       </div>
       <p>For each token, tap the letter you go back to. The copying happens by itself.</p>
+      <p>Every token is worth 100 points. Wrong taps cost 25. Be quick for a time bonus.</p>
     </div>
     <button class="primary" id="start">Start decoding</button>
   </section>
 
   <main id="game" hidden>
-    <div class="bar"><h2>Secret message</h2><div class="clock" id="clock" aria-live="off">0:00</div></div>
+    <div class="bar"><h2>Secret message</h2><div class="hud"><div class="score" id="score" aria-label="Score">0</div><div class="clock" id="clock" aria-live="off">0:00</div></div></div>
     <div class="board" id="board" aria-label="Decoded message so far"></div>
     <div class="card">
       <div class="meta"><span id="count">Token 1 of 9</span><span class="dots" id="dots"></span></div>
@@ -116,13 +128,18 @@ button:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
   <section id="done" hidden>
     <h1>Decoded!</h1>
     <div class="reveal" id="reveal"></div>
-    <div class="stats">
-      <div><b id="time">0:00</b>your time</div>
-      <div><b id="miss">0</b>wrong taps</div>
+    <div class="rank">
+      <div class="stars" id="stars" aria-hidden="true"></div>
+      <h2 id="title">Token Master</h2>
+      <div class="pts"><span id="final">0</span> <small>points</small></div>
     </div>
-    <p class="raise">Raise your hand and show your screen!</p>
+    <div class="stats">
+      <div><b id="time">0:00</b>time</div>
+      <div><b id="miss">0</b>wrong taps</div>
+      <div><b id="bonus">+0</b>time bonus</div>
+    </div>
     <p class="note" id="note"></p>
-    <button class="ghost" id="again">Play again</button>
+    <button class="primary" id="again">Beat your score</button>
   </section>
 
 </div>
@@ -150,8 +167,12 @@ button:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
   var $=function(id){return document.getElementById(id)};
   var show=function(c){return c===" "?"␣":c};
 
-  var out,k,miss,t0,timer,busy;
+  var out,k,miss,t0,timer,busy,score;
 
+  function setScore(v){
+    score=v;var el=$("score");el.textContent=score;
+    el.classList.remove("bump");void el.offsetWidth;el.classList.add("bump");
+  }
   function fmt(ms){var s=Math.floor(ms/1000);return Math.floor(s/60)+":"+String(s%60).padStart(2,"0")}
 
   function renderBoard(cls){
@@ -200,7 +221,7 @@ button:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
     if(busy)return;
     var t=TOK[k],target=out.length-t.o;
     if(i!==target){
-      miss++;
+      miss++;setScore(Math.max(0,score-25));
       el.classList.remove("nope");void el.offsetWidth;el.classList.add("nope");
       $("hint").textContent="Not that one. Start at the last letter and count "+t.o+" to the left.";
       return;
@@ -236,7 +257,7 @@ button:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
   }
 
   function next(){
-    busy=false;k++;
+    busy=false;setScore(score+100);k++;
     if(k>=TOK.length)return finish();
     renderToken();
     if(TOK[k].l===0)$("write").focus();
@@ -244,22 +265,47 @@ button:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
 
   function finish(){
     clearInterval(timer);
-    var ms=Date.now()-t0;
+    var ms=Date.now()-t0,sec=Math.floor(ms/1000);
+    var bonus=Math.max(0,300-sec*5),total=score+bonus;
+    var max=TOK.length*100+300;
+    var tiers=[[0.88,3,"LZ77 Legend"],[0.7,2,"Token Master"],[0.5,1,"Decoder"],[0,0,"Apprentice"]];
+    var tier=tiers.find(function(t){return total>=t[0]*max});
     $("game").hidden=true;$("done").hidden=false;
     $("reveal").textContent=MSG;
     $("time").textContent=fmt(ms);
     $("miss").textContent=miss;
+    $("bonus").textContent="+"+bonus;
+    $("final").textContent=total;
+    $("title").textContent=tier[2];
+    var st="";for(var i=0;i<3;i++)st+=i<tier[1]?"★":'<span class="off">★</span>';
+    $("stars").innerHTML=st;
+    confetti();
     $("note").textContent=MSG.length+" letters were sent as just "+TOK.length+" tokens.";
     window.scrollTo(0,0);
   }
 
   function start(){
-    out=[];k=0;miss=0;busy=false;
+    out=[];k=0;miss=0;busy=false;score=0;$("score").textContent="0";
     $("intro").hidden=true;$("done").hidden=true;$("game").hidden=false;
     t0=Date.now();$("clock").textContent="0:00";
     clearInterval(timer);timer=setInterval(function(){$("clock").textContent=fmt(Date.now()-t0)},250);
     renderToken();
     $("write").focus();
+  }
+
+  function confetti(){
+    if(window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches)return;
+    var c=$("fx"),x=c.getContext("2d"),W=c.width=innerWidth,H=c.height=innerHeight;
+    var cols=["#0A4CDC","#72ACFF","#FFC845","#001542","#FFFFFF"],P=[];
+    for(var i=0;i<140;i++)P.push({x:W/2,y:H*0.3,vx:(Math.random()-0.5)*14,vy:-Math.random()*13-3,s:5+Math.random()*6,
+      r:Math.random()*6,vr:(Math.random()-0.5)*0.3,c:cols[i%cols.length]});
+    var t=0;
+    (function f(){
+      x.clearRect(0,0,W,H);t++;
+      P.forEach(function(p){p.vy+=0.35;p.vx*=0.99;p.x+=p.vx;p.y+=p.vy;p.r+=p.vr;
+        x.save();x.translate(p.x,p.y);x.rotate(p.r);x.fillStyle=p.c;x.fillRect(-p.s/2,-p.s/3,p.s,p.s*0.66);x.restore();});
+      if(t<130)requestAnimationFrame(f);else x.clearRect(0,0,W,H);
+    })();
   }
 
   $("start").addEventListener("click",start);
