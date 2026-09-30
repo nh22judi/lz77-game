@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Decode the secret — LZ77</title>
+<title>Decode the secret: LZ77</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
@@ -87,7 +87,7 @@ button:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
 
   <section id="intro">
     <h1>You are the decompressor</h1>
-    <p class="lede">A secret message was compressed with LZ77. Follow the tokens to rebuild it — as fast as you can.</p>
+    <p class="lede">A secret message was compressed with LZ77. Follow the tokens to rebuild it as fast as you can.</p>
     <div class="how">
       <div class="tok">(8, 3, g)</div>
       <div class="parts">
@@ -189,7 +189,7 @@ button:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
       $("instr").textContent="Count "+t.o+" back from the end and tap that letter.";
       $("write").hidden=true;
     }else{
-      $("instr").textContent="Nothing to copy — just write it.";
+      $("instr").textContent="Nothing to copy. Just write it.";
       $("write").hidden=false;
       $("write").textContent="Write "+(t.c===" "?"a space":t.c);
     }
